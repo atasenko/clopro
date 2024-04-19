@@ -1,0 +1,15 @@
+# Local .terraform directories and templates
+**/.terraform/*
+.terraform
+.terraform.*
+
+# .tfstate templates
+*.tfstate
+*.tfstate.*
+
+# own secret vars store.
+personal.auto.tfvars
+key.json
+*.pub
+ansible.tf
+prod.tftpl
