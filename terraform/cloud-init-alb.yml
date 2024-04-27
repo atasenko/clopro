@@ -1,0 +1,14 @@
+#cloud-config
+users:
+  - name: ${username}
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ${ssh_key}
+package_update: true
+package_upgrade: false
+packages:
+ - nginx
+runcmd:
+ - echo '<html><body bgcolor="yellow">It`s my cat!!!<br/><img width="100%" src="https://storage.yandexcloud.net/catpictures/cat.jpg"></body></html>' > /var/www/html/index.html
