@@ -46,15 +46,68 @@ resource "yandex_iam_service_account_static_access_key" "sa-static-key" {
   description        = "static access key for object storage"
 }
 
+resource "yandex_kms_symmetric_key" "cat-key" {
+  name              = "cat-symmetric-key"
+  description       = "Key for cat safety"
+  default_algorithm = "AES_256"
+  rotation_period   = "8760h" // equal to 1 year
+}
+
 resource "yandex_storage_bucket" "catpictures" {
-  bucket = "catpictures"
+  bucket     = "cats.tasenko.ru"
+  access_key = yandex_iam_service_account_static_access_key.sa-static-key.access_key
+  secret_key = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
+  acl        = "public-read"
+  max_size   = 1073741824
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        kms_master_key_id = yandex_kms_symmetric_key.cat-key.id
+        sse_algorithm     = "aws:kms"
+      }
+    }
+  }
+
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
+  }
+
+  https {
+    certificate_id = yandex_cm_certificate.cats-tasenko-ru.id
+  }
+}
+
+resource "yandex_storage_object" "index-static" {
+  bucket = yandex_storage_bucket.catpictures.bucket
+  key    = "index.html"
+  source = "../src/index.html"
   access_key = yandex_iam_service_account_static_access_key.sa-static-key.access_key
   secret_key = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
   acl    = "public-read"
 }
 
+resource "yandex_storage_object" "error-static" {
+  bucket = yandex_storage_bucket.catpictures.bucket
+  key    = "error.html"
+  source = "../src/error.html"
+  access_key = yandex_iam_service_account_static_access_key.sa-static-key.access_key
+  secret_key = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
+  acl    = "public-read"
+}
+
+resource "yandex_cm_certificate" "cats-tasenko-ru" {
+  name    = "cats-tasenko-ru"
+  domains = ["cats.tasenko.ru"]
+
+  managed {
+    challenge_type = "DNS_CNAME"
+  }
+}
+
 resource "yandex_storage_object" "fridgecat" {
-  bucket = "catpictures"
+  bucket = yandex_storage_bucket.catpictures.bucket
   key    = "cat.jpg"
   source = "../img/cat.jpg"
   access_key = yandex_iam_service_account_static_access_key.sa-static-key.access_key
